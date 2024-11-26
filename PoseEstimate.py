@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import pandas as pd
 import argparse
-from tqdm import tqdm  # Progress bar library
+from tqdm import tqdm
 
 # Initialize MediaPipe
 mp_pose = mp.solutions.pose
@@ -17,6 +17,16 @@ parser.add_argument("--input", required=True, help="Path to the input AVI video 
 parser.add_argument("--output_video", required=True, help="Path to save the annotated AVI video.")
 parser.add_argument("--output_csv", required=True, help="Path to save the CSV file with pose data.")
 args = parser.parse_args()
+
+# Define landmark names
+POSE_LANDMARKS = [landmark.name.lower() for landmark in mp_pose.PoseLandmark]
+HAND_LANDMARKS = [
+    "wrist", "thumb_cmc", "thumb_mcp", "thumb_ip", "thumb_tip",
+    "index_finger_mcp", "index_finger_pip", "index_finger_dip", "index_finger_tip",
+    "middle_finger_mcp", "middle_finger_pip", "middle_finger_dip", "middle_finger_tip",
+    "ring_finger_mcp", "ring_finger_pip", "ring_finger_dip", "ring_finger_tip",
+    "pinky_mcp", "pinky_pip", "pinky_dip", "pinky_tip"
+]
 
 # Open the video
 cap = cv2.VideoCapture(args.input)
@@ -57,18 +67,26 @@ with tqdm(total=total_frames, desc="Processing Video", unit="frame") as pbar:
         # Extract pose and hand data
         frame_data = {"frame": frame_index}
 
+        # For pose landmarks
         if pose_results.pose_landmarks:
             for idx, landmark in enumerate(pose_results.pose_landmarks.landmark):
-                frame_data[f"pose_{idx}_x"] = landmark.x
-                frame_data[f"pose_{idx}_y"] = landmark.y
-                frame_data[f"pose_{idx}_z"] = landmark.z
+                if idx < len(POSE_LANDMARKS):  # Safety check
+                    landmark_name = POSE_LANDMARKS[idx]
+                    frame_data[f"{landmark_name}_x"] = landmark.x
+                    frame_data[f"{landmark_name}_y"] = landmark.y
+                    frame_data[f"{landmark_name}_z"] = landmark.z
+                    frame_data[f"{landmark_name}_visibility"] = landmark.visibility
 
+        # For hand landmarks
         if hands_results.multi_hand_landmarks:
             for hand_idx, hand_landmarks in enumerate(hands_results.multi_hand_landmarks):
+                hand_label = "left" if hand_idx == 0 else "right"
                 for idx, landmark in enumerate(hand_landmarks.landmark):
-                    frame_data[f"hand{hand_idx}_{idx}_x"] = landmark.x
-                    frame_data[f"hand{hand_idx}_{idx}_y"] = landmark.y
-                    frame_data[f"hand{hand_idx}_{idx}_z"] = landmark.z
+                    if idx < len(HAND_LANDMARKS):  # Safety check
+                        landmark_name = HAND_LANDMARKS[idx]
+                        frame_data[f"{hand_label}_{landmark_name}_x"] = landmark.x
+                        frame_data[f"{hand_label}_{landmark_name}_y"] = landmark.y
+                        frame_data[f"{hand_label}_{landmark_name}_z"] = landmark.z
 
         csv_data.append(frame_data)
 
