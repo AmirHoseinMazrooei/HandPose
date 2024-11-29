@@ -3,6 +3,8 @@ import mediapipe as mp
 import pandas as pd
 import argparse
 from tqdm import tqdm
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 # Initialize MediaPipe
 mp_pose = mp.solutions.pose
@@ -16,6 +18,8 @@ parser = argparse.ArgumentParser(description="Perform pose estimation on a video
 parser.add_argument("--input", required=True, help="Path to the input AVI video file.")
 parser.add_argument("--output_video", required=True, help="Path to save the annotated AVI video.")
 parser.add_argument("--output_csv", required=True, help="Path to save the CSV file with pose data.")
+parser.add_argument("--resize_width", type=int, default=640, help="Resize width for faster processing.")
+parser.add_argument("--frame_skip", type=int, default=1, help="Process every nth frame for faster processing.")
 args = parser.parse_args()
 
 # Define landmark names
@@ -34,12 +38,19 @@ total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = int(cap.get(cv2.CAP_PROP_FPS))
+resize_height = int(height * args.resize_width / width)
 fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Codec for AVI format
-out = cv2.VideoWriter(args.output_video, fourcc, fps, (width, height))
+out = cv2.VideoWriter(args.output_video, fourcc, fps, (args.resize_width, resize_height))
 
 # CSV data structure
 csv_data = []
 frame_index = 0
+
+def process_pose(rgb_frame):
+    return pose.process(rgb_frame)
+
+def process_hands(rgb_frame):
+    return hands.process(rgb_frame)
 
 # Process video with a progress bar
 with tqdm(total=total_frames, desc="Processing Video", unit="frame") as pbar:
@@ -48,12 +59,23 @@ with tqdm(total=total_frames, desc="Processing Video", unit="frame") as pbar:
         if not ret:
             break
 
-        # Convert the frame to RGB
+        # Skip frames for faster processing
+        if frame_index % args.frame_skip != 0:
+            frame_index += 1
+            pbar.update(1)
+            continue
+
+        # Resize frame for faster processing
+        frame = cv2.resize(frame, (args.resize_width, resize_height))
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Process pose and hands
-        pose_results = pose.process(rgb_frame)
-        hands_results = hands.process(rgb_frame)
+        # Process pose and hands in parallel
+        with ThreadPoolExecutor() as executor:
+            pose_future = executor.submit(process_pose, rgb_frame)
+            hands_future = executor.submit(process_hands, rgb_frame)
+
+            pose_results = pose_future.result()
+            hands_results = hands_future.result()
 
         # Draw pose landmarks
         if pose_results.pose_landmarks:

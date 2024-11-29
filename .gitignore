@@ -8,6 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+*.avi
+*.csv
 build/
 develop-eggs/
 dist/
