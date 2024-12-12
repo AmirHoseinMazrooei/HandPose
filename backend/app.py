@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost", "http://127.0.0.1"],
+        "origins": ["http://localhost", "http://127.0.0.1","http://handpose.duckdns.org"],
         "methods": ["GET", "POST"],
         "allow_headers": ["Content-Type"]
     }

@@ -41,7 +41,7 @@ const PoseEstimationApp = () => {
     setResults(null);
   
     try {
-      const response = await axios.post('http://localhost:5000/upload', formData, {
+      const response = await axios.post('http://handpose.duckdns.org:5000/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -79,7 +79,7 @@ const PoseEstimationApp = () => {
 
     try {
       const response = await axios({
-        url: `http://localhost:5000${results.annotatedVideo}`,
+        url: `http://handpose.duckdns.org:5000${results.annotatedVideo}`,
         method: 'GET',
         responseType: 'blob',
       });
@@ -115,7 +115,7 @@ const PoseEstimationApp = () => {
   
     try {
       for (const file of filesToDownload) {
-        const url = `http://localhost:5000${results![file.key]}`;
+        const url = `http://handpose.duckdns.org:5000${results![file.key]}`;
         console.log(`Attempting to download from URL: ${url}`);
         const response = await axios({
           url: url,
@@ -191,7 +191,7 @@ const PoseEstimationApp = () => {
           <Download className="mr-2" /> Download Video
         </button>
         <button
-          onClick={() => window.open(`http://localhost:5000${results.poseDataCsv}`, '_blank')}
+          onClick={() => window.open(`http://handpose.duckdns.org:5000${results.poseDataCsv}`, '_blank')}
           className="flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
         >
           <BarChart2 className="mr-2" /> Download CSV
