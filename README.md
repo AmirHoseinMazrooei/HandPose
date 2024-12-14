@@ -23,7 +23,7 @@
 
 **Handpose** is a web application designed for **2D and 3D pose estimation** from video files. Leveraging technologies like **MediaPipe** and **OpenCV**, it allows users to upload videos, perform pose and hand landmark detection, and visualize analytical data derived from processed frames. The application provides annotated videos, CSV data, and insightful plots to help users analyze movements effectively.
 
-![Application Workflow](frontend/public/demo.png)
+![Application Workflow](images/demo.png)
 
 ## Features
 
