@@ -1,6 +1,6 @@
 # Handpose
 
-![Project Banner](frontend/public/handpose.svg)
+![Project Banner](frontend/public/hand.svg)
 
 ## Table of Contents
 
