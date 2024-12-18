@@ -3,7 +3,7 @@ services:
   backend:
     image: ahm1376/backend:latest
     ports:
-      - "5000:5000"
+      - "5200:5200"
     restart: always
     volumes:
       - ./uploads:/app/uploads

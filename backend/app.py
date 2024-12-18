@@ -7,7 +7,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 from flask_cors import CORS
-from concurrent.futures import ThreadPoolExecutor
+
+plt.switch_backend('Agg')
 
 # Flask App Setup
 app = Flask(__name__)
@@ -310,4 +311,4 @@ def index():
 
 # Run the app
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5200, debug=True)

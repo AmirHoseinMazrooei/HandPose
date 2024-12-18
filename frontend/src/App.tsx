@@ -42,7 +42,7 @@ const PoseEstimationApp = () => {
     setResults(null);
   
     try {
-      const response = await axios.post('http://localhost:5000/upload', formData, {
+      const response = await axios.post('http://localhost:5200/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -81,7 +81,7 @@ const PoseEstimationApp = () => {
 
     try {
       const response = await axios({
-        url: `http://localhost:5000${results.annotatedVideo}`,
+        url: `http://localhost:5200${results.annotatedVideo}`,
         method: 'GET',
         responseType: 'blob',
       });
@@ -136,7 +136,7 @@ const PoseEstimationApp = () => {
   
     try {
       for (const file of filesToDownload) {
-        const url = `http://localhost:5000${file.url}`;
+        const url = `http://localhost:5200${file.url}`;
         console.log(`Attempting to download from URL: ${url}`);
         const response = await axios({
           url: url,
@@ -170,25 +170,25 @@ const PoseEstimationApp = () => {
   //         <div className="grid grid-cols-3 gap-4">
   //           <div>
   //             <h3 className="text-lg font-semibold mb-4">X Coordinate</h3>
-  //             {results && <img src={`http://localhost:5000${results.wristX}`} alt="Wrist X Coordinate" className="w-full rounded-lg" />}
+  //             {results && <img src={`http://localhost:5200${results.wristX}`} alt="Wrist X Coordinate" className="w-full rounded-lg" />}
   //           </div>
   //           <div>
   //             <h3 className="text-lg font-semibold mb-4">Y Coordinate</h3>
-  //             {results && <img src={`http://localhost:5000${results.wristY}`} alt="Wrist Y Coordinate" className="w-full rounded-lg" />}
+  //             {results && <img src={`http://localhost:5200${results.wristY}`} alt="Wrist Y Coordinate" className="w-full rounded-lg" />}
   //           </div>
   //           <div>
   //             <h3 className="text-lg font-semibold mb-4">Z Coordinate</h3>
-  //             {results && <img src={`http://localhost:5000${results.wristZ}`} alt="Wrist Z Coordinate" className="w-full rounded-lg" />}
+  //             {results && <img src={`http://localhost:5200${results.wristZ}`} alt="Wrist Z Coordinate" className="w-full rounded-lg" />}
   //           </div>
   //         </div>
   //       </div>
   //       <div>
   //         <h2 className="text-xl font-semibold mb-4">Thumb Distance</h2>
-  //         {results && <img src={`http://localhost:5000${results.thumbDistance}`} alt="Thumb Distance" className="w-full rounded-lg" />}
+  //         {results && <img src={`http://localhost:5200${results.thumbDistance}`} alt="Thumb Distance" className="w-full rounded-lg" />}
   //       </div>
   //       <div>
   //         <h2 className="text-xl font-semibold mb-4">Thumb Distance</h2>
-  //         {results && <img src={`http://localhost:5000${results.thumbDistance}`} alt="Thumb Distance" className="w-full rounded-lg" />}
+  //         {results && <img src={`http://localhost:5200${results.thumbDistance}`} alt="Thumb Distance" className="w-full rounded-lg" />}
   //       </div>
   //   </div>
   //   );
@@ -212,7 +212,7 @@ const PoseEstimationApp = () => {
           <Download className="mr-2" /> Download Video
         </button>
         <button
-          onClick={() => window.open(`http://localhost:5000${results.poseDataCsv}`, '_blank')}
+          onClick={() => window.open(`http://localhost:5200${results.poseDataCsv}`, '_blank')}
           className="flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
         >
           <BarChart2 className="mr-2" /> Download CSV
