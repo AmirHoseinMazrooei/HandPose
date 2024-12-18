@@ -1,8 +1,6 @@
 version: '3'
-
 services:
   backend:
-    build: ./backend
     image: ahm1376/backend:latest
     ports:
       - "5000:5000"
@@ -17,7 +15,6 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
     image: ahm1376/frontend:latest
     ports:
       - "80:80"
