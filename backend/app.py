@@ -123,6 +123,8 @@ def process_video(input_path, output_video_path, output_csv_path, hand_preferenc
     output_thumb_distance = calculate_finger_thumb_distance(output_csv_path, hand_preference)
     output_wrist_speed = calculate_wrist_speed(output_csv_path, hand_preference)
     output_wrist_coordinates = plot_wrist_individual_coordinates(output_csv_path, hand_preference)
+   # Call the new function
+    fingertip_position_plots = plot_finger_tip_positions(output_csv_path, hand_preference)
 
     return (
         output_video_path,
@@ -130,6 +132,7 @@ def process_video(input_path, output_video_path, output_csv_path, hand_preferenc
         output_thumb_distance,
         output_wrist_speed,
         output_wrist_coordinates,
+        fingertip_position_plots,
     )
 
 # Route to upload and process video
@@ -261,7 +264,33 @@ def calculate_finger_thumb_distance(csv_path, hand_preference):
     SavePlots(f"{hand_preference.capitalize()} Thumb-Index Distance", "Distance", distances, output_path)
     return f"/outputs/{hand_preference}_thumb_index_distance_plot.png"
 
+def plot_finger_tip_positions(csv_path, hand_preference):
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import os
 
+    df = pd.read_csv(csv_path)
+    finger_tips = ['thumb_tip', 'index_finger_tip', 'middle_finger_tip', 'ring_finger_tip', 'pinky_tip']
+    x_columns = [f"{hand_preference}_{finger}_x" for finger in finger_tips]
+    y_columns = [f"{hand_preference}_{finger}_y" for finger in finger_tips]
+
+    output_paths = []
+
+    for finger, x_col, y_col in zip(finger_tips, x_columns, y_columns):
+        if x_col in df.columns and y_col in df.columns:
+            plt.figure(figsize=(8, 6))
+            plt.plot(df[x_col], df[y_col], marker='o', linestyle='-')
+            plt.title(f"{finger.replace('_', ' ').title()} Positions")
+            plt.xlabel('X Position')
+            plt.ylabel('Y Position')
+            plt.gca().invert_yaxis()  # Optional: Invert y-axis if needed
+            output_filename = f"{hand_preference}_{finger}_positions_plot.png"
+            output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+            plt.savefig(output_path)
+            plt.close()
+            output_paths.append(f"/outputs/{output_filename}")
+
+    return output_paths
 
 @app.route('/')
 def index():

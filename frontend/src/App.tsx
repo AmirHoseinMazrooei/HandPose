@@ -11,6 +11,7 @@ interface Results {
   wristX: string;
   wristY: string;
   wristZ: string;
+  fingertipPlots: string[];
 }
 
 const PoseEstimationApp = () => {
@@ -58,6 +59,7 @@ const PoseEstimationApp = () => {
         wristX: response.data.wrist_x,
         wristY: response.data.wrist_y,
         wristZ: response.data.wrist_z,
+        fingertipPlots: response.data.fingertip_plots, // Add this line
       });
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -105,12 +107,27 @@ const PoseEstimationApp = () => {
       return;
     }
   
-    const filesToDownload: { key: keyof Results; filename: string }[] = [
-      { key: 'wristX', filename: `${selectedHand}_wrist_x_plot.png` },
-      { key: 'wristY', filename: `${selectedHand}_wrist_y_plot.png` },
-      { key: 'wristZ', filename: `${selectedHand}_wrist_z_plot.png` },
-      { key: 'wristSpeed', filename: `${selectedHand}_wrist_speed_plot.png` },
-      { key: 'thumbDistance', filename: `${selectedHand}_thumb_index_distance_plot.png` },
+    const filesToDownload: { url: string; filename: string }[] = [
+      {
+        url: results.wristX,
+        filename: `${selectedHand}_wrist_x_plot.png`,
+      },
+      {
+        url: results.wristY,
+        filename: `${selectedHand}_wrist_y_plot.png`,
+      },
+      {
+        url: results.wristZ,
+        filename: `${selectedHand}_wrist_z_plot.png`,
+      },
+      {
+        url: results.wristSpeed,
+        filename: `${selectedHand}_wrist_speed_plot.png`,
+      },
+      {
+        url: results.thumbDistance,
+        filename: `${selectedHand}_thumb_index_distance_plot.png`,
+      },
     ];
   
     try {
