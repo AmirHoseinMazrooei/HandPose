@@ -79,7 +79,8 @@ The application follows a **client-server** architecture with a clear separation
 1. **Build and Start Services**
 
      ```bash
-     docker-compose up --build
+     docker buildx build --platform linux/amd64,linux/arm64 -t ahm1376/backend:latest ./backend --push
+     docker buildx build --platform linux/amd64,linux/arm64 -t ahm1376/frontend:latest ./frontend --push
      ```
 
      This command will:
