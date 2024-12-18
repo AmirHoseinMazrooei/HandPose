@@ -157,7 +157,7 @@ def upload_video():
 
     # Process the video
     try:
-        output_video_path, output_csv_path, output_thumb_distance, output_wrist_speed, output_wrist_coordinates = process_video(
+        output_video_path, output_csv_path, output_thumb_distance, output_wrist_speed, output_wrist_coordinates, fingertip_position_plot = process_video(
             input_path, output_video_path, output_csv_path, hand_preference
         )
     except Exception as e:
@@ -171,6 +171,7 @@ def upload_video():
         'wrist_x': output_wrist_coordinates.get('X'),
         'wrist_y': output_wrist_coordinates.get('Y'),
         'wrist_z': output_wrist_coordinates.get('Z'),
+        'fingertips_plot': fingertip_position_plot,
     })
 
 # Route to serve processed files
@@ -270,27 +271,37 @@ def plot_finger_tip_positions(csv_path, hand_preference):
     import os
 
     df = pd.read_csv(csv_path)
-    finger_tips = ['thumb_tip', 'index_finger_tip', 'middle_finger_tip', 'ring_finger_tip', 'pinky_tip']
+    finger_tips = [
+        'thumb_tip', 'index_finger_tip', 'middle_finger_tip',
+        'ring_finger_tip', 'pinky_tip'
+    ]
+    colors = ['red', 'blue', 'green', 'orange', 'purple']
     x_columns = [f"{hand_preference}_{finger}_x" for finger in finger_tips]
     y_columns = [f"{hand_preference}_{finger}_y" for finger in finger_tips]
 
-    output_paths = []
-
-    for finger, x_col, y_col in zip(finger_tips, x_columns, y_columns):
+    plt.figure(figsize=(8, 6))
+    for finger, x_col, y_col, color in zip(finger_tips, x_columns, y_columns, colors):
         if x_col in df.columns and y_col in df.columns:
-            plt.figure(figsize=(8, 6))
-            plt.plot(df[x_col], df[y_col], marker='o', linestyle='-')
-            plt.title(f"{finger.replace('_', ' ').title()} Positions")
-            plt.xlabel('X Position')
-            plt.ylabel('Y Position')
-            plt.gca().invert_yaxis()  # Optional: Invert y-axis if needed
-            output_filename = f"{hand_preference}_{finger}_positions_plot.png"
-            output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-            plt.savefig(output_path)
-            plt.close()
-            output_paths.append(f"/outputs/{output_filename}")
+            plt.plot(
+                df[x_col], df[y_col],
+                marker='o', linestyle='None', color=color, markersize=3,
+                label=finger.replace('_', ' ').title()
+            )
 
-    return output_paths
+    plt.title(f"{hand_preference.capitalize()} Fingertip Positions")
+    plt.xlabel('X Position')
+    plt.ylabel('Y Position')
+
+    # Remove y-axis inversion to have y start from smaller to bigger numbers
+    # plt.gca().invert_yaxis()  # Remove or comment out this line
+
+    plt.legend()
+    output_filename = f"{hand_preference}_fingertip_positions_plot.png"
+    output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+    plt.savefig(output_path)
+    plt.close()
+
+    return f"/{output_path}"
 
 @app.route('/')
 def index():

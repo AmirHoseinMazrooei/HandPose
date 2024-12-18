@@ -11,7 +11,7 @@ interface Results {
   wristX: string;
   wristY: string;
   wristZ: string;
-  fingertipPlots: string[];
+  fingertipsPlot: string;
 }
 
 const PoseEstimationApp = () => {
@@ -59,7 +59,7 @@ const PoseEstimationApp = () => {
         wristX: response.data.wrist_x,
         wristY: response.data.wrist_y,
         wristZ: response.data.wrist_z,
-        fingertipPlots: response.data.fingertip_plots, // Add this line
+        fingertipsPlot: response.data.fingertips_plot, // Add this line
       });
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -128,11 +128,15 @@ const PoseEstimationApp = () => {
         url: results.thumbDistance,
         filename: `${selectedHand}_thumb_index_distance_plot.png`,
       },
+      {
+        url: results.fingertipsPlot,
+        filename: `${selectedHand}_fingertip_positions_plot.png`,
+      }
     ];
   
     try {
       for (const file of filesToDownload) {
-        const url = `http://localhost:5000${results![file.key]}`;
+        const url = `http://localhost:5000${file.url}`;
         console.log(`Attempting to download from URL: ${url}`);
         const response = await axios({
           url: url,
