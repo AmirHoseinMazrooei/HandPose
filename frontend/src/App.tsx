@@ -46,7 +46,7 @@ const PoseEstimationApp = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000, // 5 minute timeout
+        timeout: 6000000, // 5 minute timeout
         maxContentLength: Infinity,
         maxBodyLength: Infinity
       });
