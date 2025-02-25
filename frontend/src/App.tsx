@@ -1,3 +1,4 @@
+// filepath: /c:/Projects/Candace Project/Candace_Project/frontend/src/App.tsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Upload, BarChart2, Activity, Loader2, Download } from 'lucide-react';
@@ -20,10 +21,12 @@ const PoseEstimationApp = () => {
   const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedHand, setSelectedHand] = useState<'left' | 'right'>('right');
+  const [cmValue, setCmValue] = useState<number>(2);
+  const [pxValue, setPxValue] = useState<number>(14);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    setSelectedFile(file||null);
+    setSelectedFile(file || null);
     setError(null);
   };
 
@@ -36,6 +39,8 @@ const PoseEstimationApp = () => {
     const formData = new FormData();
     formData.append('video', selectedFile);
     formData.append('hand', selectedHand);
+    formData.append('scale_cm', cmValue.toString());
+    formData.append('scale_px', pxValue.toString());
   
     setLoading(true);
     setError(null);
@@ -59,7 +64,7 @@ const PoseEstimationApp = () => {
         wristX: response.data.wrist_x,
         wristY: response.data.wrist_y,
         wristZ: response.data.wrist_z,
-        fingertipsPlot: response.data.fingertips_plot, // Add this line
+        fingertipsPlot: response.data.fingertips_plot,
       });
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -160,64 +165,15 @@ const PoseEstimationApp = () => {
     }
   };
 
-  // const renderAnalysisResults = () => {
-  //   if (!analysisResults) return null;
-
-  //   return (
-  //     <div className="mt-6 space-y-4">
-  //       <div>
-  //         <h2 className="text-xl font-semibold mb-4">Wrist Coordinate Plots</h2>
-  //         <div className="grid grid-cols-3 gap-4">
-  //           <div>
-  //             <h3 className="text-lg font-semibold mb-4">X Coordinate</h3>
-  //             {results && <img src={`http://localhost:5200${results.wristX}`} alt="Wrist X Coordinate" className="w-full rounded-lg" />}
-  //           </div>
-  //           <div>
-  //             <h3 className="text-lg font-semibold mb-4">Y Coordinate</h3>
-  //             {results && <img src={`http://localhost:5200${results.wristY}`} alt="Wrist Y Coordinate" className="w-full rounded-lg" />}
-  //           </div>
-  //           <div>
-  //             <h3 className="text-lg font-semibold mb-4">Z Coordinate</h3>
-  //             {results && <img src={`http://localhost:5200${results.wristZ}`} alt="Wrist Z Coordinate" className="w-full rounded-lg" />}
-  //           </div>
-  //         </div>
-  //       </div>
-  //       <div>
-  //         <h2 className="text-xl font-semibold mb-4">Thumb Distance</h2>
-  //         {results && <img src={`http://localhost:5200${results.thumbDistance}`} alt="Thumb Distance" className="w-full rounded-lg" />}
-  //       </div>
-  //       <div>
-  //         <h2 className="text-xl font-semibold mb-4">Thumb Distance</h2>
-  //         {results && <img src={`http://localhost:5200${results.thumbDistance}`} alt="Thumb Distance" className="w-full rounded-lg" />}
-  //       </div>
-  //   </div>
-  //   );
-  // };
-
   const renderResultActions = () => {
     if (!results) return null;
 
     return (
-      <div className="mt-6 grid grid-cols-3 gap-4">
-        <button
-          onClick={downloadAnlysis}
-          className="flex items-center justify-center p-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition"
-        >
-          <Activity className="mr-2" /> Download Anlysis
-        </button>
-        <button
-          onClick={downloadAnnotatedVideo}
-          className="flex items-center justify-center p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-        >
-          <Download className="mr-2" /> Download Video
-        </button>
-        <button
-          onClick={() => window.open(`http://localhost:5200${results.poseDataCsv}`, '_blank')}
-          className="flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-        >
-          <BarChart2 className="mr-2" /> Download CSV
-        </button>
-      </div>
+      <div className="mt-6 text-center">
+      <p className="text-lg font-semibold text-gray-700">
+        Processing complete! Please check the output folder.
+      </p>
+    </div>
     );
   };
 
@@ -270,6 +226,26 @@ const PoseEstimationApp = () => {
             <span className="ml-2 text-gray-700">Right Hand</span>
           </label>
         </div>
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Scaling (cm)</label>
+            <input
+              type="number"
+              value={cmValue}
+              onChange={(e) => setCmValue(Number(e.target.value))}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Scaling (pixels)</label>
+            <input
+              type="number"
+              value={pxValue}
+              onChange={(e) => setPxValue(Number(e.target.value))}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+            />
+          </div>
+        </div>
         {error && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-center">
             {error}
@@ -287,7 +263,7 @@ const PoseEstimationApp = () => {
                 <Loader2 className="mr-2 animate-spin" /> Processing...
               </>
             ) : (
-              'Upload and Process Video'
+              'Upload and Process Videossss'
             )}
           </button>
         </div>
