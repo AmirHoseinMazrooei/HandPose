@@ -118,7 +118,7 @@ def process_video(input_path, output_video_path, output_csv_path, hand_preferenc
 
                         # Convert normalized coordinates to pixel coordinates
                         x_pixel = landmark.x * width
-                        y_pixel = landmark.y * height
+                        y_pixel = (1-landmark.y) * height
 
                         # Apply scaling factor (convert to centimeters)
                         x_cm = (x_pixel - cx) * scaling_factor
@@ -141,10 +141,11 @@ def process_video(input_path, output_video_path, output_csv_path, hand_preferenc
     df.to_csv(output_csv_path, index=False)
 
     # Update calculation functions to use the preferred hand
-    calculate_all_thumb_finger_distances(output_csv_path, hand_preference)
-    calculate_all_joint_speeds(output_csv_path, hand_preference)
-    calculate_all_joint_positions(output_csv_path, hand_preference)
-    calculate_all_joint_accelerations(output_csv_path, hand_preference)
+    # calculate_all_thumb_finger_distances(output_csv_path, hand_preference)
+    # calculate_all_joint_speeds(output_csv_path, hand_preference)
+    # calculate_all_joint_positions(output_csv_path, hand_preference)
+    # calculate_all_joint_accelerations(output_csv_path, hand_preference)
+    generate_consolidated_analysis(output_csv_path, hand_preference)
 
 
 # Route to upload and process video
@@ -175,7 +176,7 @@ def upload_video():
 
     # Process the video
     try:
-        output_video_path, output_csv_path, output_thumb_distance, output_wrist_speed, output_wrist_coordinates, fingertip_position_plot = process_video(
+        process_video(
             input_path, output_video_path, output_csv_path, hand_preference,cm_value,px_value
         )
     except Exception as e:
@@ -184,12 +185,6 @@ def upload_video():
     return jsonify({
         'annotated_video': f"/outputs/annotated_{video_file.filename}",
         'pose_data_csv': f"/outputs/{os.path.splitext(video_file.filename)[0]}.csv",
-        'thumb_distance': output_thumb_distance,
-        'wrist_speed': output_wrist_speed,
-        'wrist_x': output_wrist_coordinates.get('X'),
-        'wrist_y': output_wrist_coordinates.get('Y'),
-        'wrist_z': output_wrist_coordinates.get('Z'),
-        'fingertips_plot': fingertip_position_plot,
     })
 
 # Route to serve processed files
@@ -257,6 +252,7 @@ def calculate_all_joint_speeds(csv_path, hand_preference):
             speed = np.sqrt((x[i] - x[i - 1])**2 +
                             (y[i] - y[i - 1])**2 +
                             (z[i] - z[i - 1])**2)
+            speed= speed/(1/59.98)
             speeds.append(speed)
         
         # Create DataFrame. Note that the timestamp is computed for each speed entry,
@@ -540,6 +536,7 @@ def calculate_all_joint_accelerations(csv_path, hand_preference):
             speed = np.sqrt((x[i] - x[i - 1])**2 +
                             (y[i] - y[i - 1])**2 +
                             (z[i] - z[i - 1])**2)
+            speed=speed/(1/59.98)
             speeds.append(speed)
 
         # Compute accelerations as the difference between consecutive speeds divided by dt.
@@ -713,6 +710,143 @@ def calculate_all_joint_accelerations(csv_path, hand_preference):
         }
 
     return results
+
+def generate_consolidated_analysis(csv_path, hand_preference):
+    """
+    Reads the raw pose CSV and computes:
+      - Speed for each joint (wrist, thumb_tip, index_finger_tip, middle_finger_tip,
+        ring_finger_tip, pinky_tip, index_finger_mcp) in cm/s.
+      - Displacement for each joint (raw Euclidean distance between consecutive frames, in cm).
+      - Acceleration for each joint (based on the speed differences).
+      - Distance from thumb_tip to each finger tip (index, middle, ring, pinky).
+      - Spread distances between adjacent finger tips:
+            * index vs middle,
+            * middle vs ring,
+            * ring vs pinky.
+    
+    Timestamps for speeds, displacements, thumb distances, and spreads are computed as (frame index + 1)/59.98.
+    Timestamps for accelerations are computed as (frame index + 2)/59.98.
+    All computed metrics are merged into one CSV file.
+    """
+    import pandas as pd
+    import numpy as np
+    import os
+
+    fps = 59.98
+    dt = 1 / fps
+
+    # Read raw pose CSV
+    df = pd.read_csv(csv_path)
+    n = len(df)
+
+    # Define joints for speed, displacement & acceleration calculations
+    joints = [
+        "wrist", "thumb_tip", "index_finger_tip",
+        "middle_finger_tip", "ring_finger_tip", "pinky_tip",
+        "index_finger_mcp"
+    ]
+    
+    # Compute speeds (cm/s) and displacements (cm) for each joint (n-1 entries)
+    speeds_df = pd.DataFrame()
+    speeds_df["timestamp"] = [(i + 1) / fps for i in range(n - 1)]
+    for joint in joints:
+        # Get joint coordinates from raw CSV
+        x = df[f"{hand_preference}_{joint}_x"].values
+        y = df[f"{hand_preference}_{joint}_y"].values
+        z = df[f"{hand_preference}_{joint}_z"].values
+        # Compute displacement: Euclidean distance between consecutive frames
+        displacement = np.sqrt(np.diff(x)**2 + np.diff(y)**2 + np.diff(z)**2)
+        # Compute speed: displacement multiplied by fps (i.e. distance/dt)
+        speed = displacement * fps
+        speeds_df[f"{joint}_speed"] = np.round(speed, 2)
+        speeds_df[f"{joint}_displacement"] = np.round(displacement, 2)
+
+    # Compute accelerations for each joint (based on speeds: n-2 entries)
+    acc_df = pd.DataFrame()
+    acc_df["timestamp"] = [(i + 2) / fps for i in range(len(speeds_df) - 1)]
+    for joint in joints:
+        sp = speeds_df[f"{joint}_speed"].values
+        # acceleration = difference of consecutive speeds divided by dt
+        acceleration = np.diff(sp) / dt
+        acc_df[f"{joint}_acceleration"] = np.round(acceleration, 2)
+    
+    # Compute thumb-to-finger distances (for each frame; n entries)
+    # Target fingers with corresponding landmark names.
+    fingers = {
+        "index": "index_finger_tip",
+        "middle": "middle_finger_tip",
+        "ring": "ring_finger_tip",
+        "pinky": "pinky_tip"
+    }
+    distances_df = pd.DataFrame()
+    distances_df["timestamp"] = [(i + 1) / fps for i in range(n)]
+    for fname, landmark in fingers.items():
+        thumb_x = df[f"{hand_preference}_thumb_tip_x"].values
+        thumb_y = df[f"{hand_preference}_thumb_tip_y"].values
+        thumb_z = df[f"{hand_preference}_thumb_tip_z"].values
+        finger_x = df[f"{hand_preference}_{landmark}_x"].values
+        finger_y = df[f"{hand_preference}_{landmark}_y"].values
+        finger_z = df[f"{hand_preference}_{landmark}_z"].values
+        distance = np.sqrt((thumb_x - finger_x)**2 +
+                           (thumb_y - finger_y)**2 +
+                           (thumb_z - finger_z)**2)
+        distances_df[f"thumb_{fname}_distance"] = np.round(distance, 2)
+    
+    # Compute spreads between finger tips (for each frame; n entries)
+    spreads_df = pd.DataFrame()
+    spreads_df["timestamp"] = [(i + 1) / fps for i in range(n)]
+    # Spread between index and middle finger tips
+    idx_x = df[f"{hand_preference}_index_finger_tip_x"].values
+    idx_y = df[f"{hand_preference}_index_finger_tip_y"].values
+    idx_z = df[f"{hand_preference}_index_finger_tip_z"].values
+    mid_x = df[f"{hand_preference}_middle_finger_tip_x"].values
+    mid_y = df[f"{hand_preference}_middle_finger_tip_y"].values
+    mid_z = df[f"{hand_preference}_middle_finger_tip_z"].values
+    spread_index_middle = np.sqrt((idx_x - mid_x)**2 + (idx_y - mid_y)**2 + (idx_z - mid_z)**2)
+    spreads_df["spread_index_middle"] = np.round(spread_index_middle, 2)
+    
+    # Spread between middle and ring finger tips
+    ring_x = df[f"{hand_preference}_ring_finger_tip_x"].values
+    ring_y = df[f"{hand_preference}_ring_finger_tip_y"].values
+    ring_z = df[f"{hand_preference}_ring_finger_tip_z"].values
+    spread_middle_ring = np.sqrt((mid_x - ring_x)**2 + (mid_y - ring_y)**2 + (mid_z - ring_z)**2)
+    spreads_df["spread_middle_ring"] = np.round(spread_middle_ring, 2)
+    
+    # Spread between ring and pinky finger tips
+    pinky_x = df[f"{hand_preference}_pinky_tip_x"].values
+    pinky_y = df[f"{hand_preference}_pinky_tip_y"].values
+    pinky_z = df[f"{hand_preference}_pinky_tip_z"].values
+    spread_ring_pinky = np.sqrt((ring_x - pinky_x)**2 + (ring_y - pinky_y)**2 + (ring_z - pinky_z)**2)
+    spreads_df["spread_ring_pinky"] = np.round(spread_ring_pinky, 2)
+    
+    # Merge speeds, accelerations, distances, and spreads on the timestamp.
+    analysis_df = pd.merge(speeds_df, acc_df, on="timestamp", how="outer")
+    analysis_df = pd.merge(analysis_df, distances_df, on="timestamp", how="outer")
+    analysis_df = pd.merge(analysis_df, spreads_df, on="timestamp", how="outer")
+    analysis_df = analysis_df.sort_values("timestamp")
+    
+    # Fill any missing values (for all columns except timestamp) using interpolation logic.
+    for col in analysis_df.columns:
+        if col == "timestamp":
+            continue
+        for i in range(len(analysis_df)):
+            if pd.isna(analysis_df.loc[i, col]):
+                if i == 0 or i == len(analysis_df) - 1:
+                    analysis_df.loc[i, col] = -1
+                else:
+                    prev_val = analysis_df.loc[i - 1, col]
+                    next_val = analysis_df.loc[i + 1, col]
+                    if pd.isna(prev_val) or pd.isna(next_val):
+                        analysis_df.loc[i, col] = -1
+                    else:
+                        analysis_df.loc[i, col] = (prev_val + next_val) / 2
+
+    # Save consolidated analysis as a single CSV (raw pose data remains separate).
+    base_filename = os.path.splitext(os.path.basename(csv_path))[0]
+    output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{base_filename}_analysis.csv")
+    analysis_df.to_csv(output_path, index=False)
+    
+    return output_path
 
 @app.route('/')
 def index():

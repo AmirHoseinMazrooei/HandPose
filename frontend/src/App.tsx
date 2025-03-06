@@ -226,23 +226,29 @@ const PoseEstimationApp = () => {
             <span className="ml-2 text-gray-700">Right Hand</span>
           </label>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Scaling (cm)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Scaling (cm)
+            </label>
             <input
               type="number"
               value={cmValue}
               onChange={(e) => setCmValue(Number(e.target.value))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition"
+              placeholder="e.g. 2"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Scaling (pixels)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Scaling (pixels)
+            </label>
             <input
               type="number"
               value={pxValue}
               onChange={(e) => setPxValue(Number(e.target.value))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition"
+              placeholder="e.g. 14"
             />
           </div>
         </div>
